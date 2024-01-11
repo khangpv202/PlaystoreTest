@@ -37,6 +37,29 @@ android {
         }
     }
 
+    flavorDimensions 'version'
+    productFlavors {
+        develop {
+            dimension 'version'
+            manifestPlaceholders = [appLabel: 'Business DEV']
+            applicationId 'com.ewbp.businessbankingapp.dev'
+        }
+        tst {
+            dimension 'version'
+            manifestPlaceholders = [appLabel: 'Business TST']
+            applicationId 'com.ewbp.businessbankingapp.tst'
+        }
+        stg {
+            dimension 'version'
+            manifestPlaceholders = [appLabel: 'Business STG']
+            applicationId 'com.ewbp.businessbankingapp.stg'
+        }
+        prod {
+            dimension 'version'
+            manifestPlaceholders = [appLabel: 'EWB Business']
+            applicationId 'com.khang.playstore'
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

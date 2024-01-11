@@ -45,7 +45,7 @@ configurations:
   prod:
     version_name: "2022.08.1-LTS"
     version_code: 2
-    app_identifier: com.eastwest.mobile.dxp.business
+    app_identifier: com.khang.playstore
     app_name: EWBP Business
     app_center_name:
     task_build: assembleProdRelease
