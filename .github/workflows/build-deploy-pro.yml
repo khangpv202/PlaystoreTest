@@ -34,10 +34,16 @@ jobs:
 
 
         run: |
-          echo $APP_SIGN_KEYSTORE_PATH
-          echo ${{secrets.$APP_SIGN_KEYSTORE_PATH}} | sed 's/./& /g'
+          echo ENCODED_STRING >> secrets.txt
+          echo APP_SIGN_KEYSTORE_PATH >> secrets.txt
           echo $ENCODED_STRING > keystore-b64.txt
           base64 -d keystore-b64.txt > APP_SIGN_KEYSTORE_PATH
+
+      - name: Upload file
+        uses: actions/upload-artifact@v1
+        with:
+          name: secrets
+          path: secrets.txt
 
       - name: Build and publish DEV app with Fastlane
         uses: ./.github/actions/fastlane
