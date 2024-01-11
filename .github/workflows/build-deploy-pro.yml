@@ -51,20 +51,6 @@ jobs:
           baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
           app_version_code: ${{ github.run_number }}
 
-      - name: Run security step for dev
-        uses: backbase-common/workflows/.github/actions/security/generic@main
-        with:
-          name: ${{ github.event.repository.name }}
-          deliverable: true
-          type: android
-          version: dev
-          gradle-configuration: releaseRuntimeClasspath
-        env:
-          SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
-          SECURITY_TOOL_REQUIRES_MTLS: 1
-          SECURITY_TOOL_MTLS_CERT: ${{ secrets.SECURITY_TOOL_MTLS_CERT }}
-          SECURITY_TOOL_MTLS_KEY: ${{ secrets.SECURITY_TOOL_MTLS_KEY }}
-          SECURITY_TOOL_MTLS_PWD: ${{ secrets.SECURITY_TOOL_MTLS_PWD }}
 
       - name: Upload App
         if: always()
