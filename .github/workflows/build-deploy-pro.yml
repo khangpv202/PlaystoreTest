@@ -30,12 +30,16 @@ jobs:
 
         env:
           ENCODED_STRING: ${{ env.SIGNING_KEY_STORE_BASE64 }}
+          ENCODED_STRING_1: ${{ SIGNING_KEY_STORE_BASE64 }}
           APP_SIGN_KEYSTORE_PATH: ${{ github.SIGNING_KEY_STORE_PATH }}
+          APP_SIGN_KEYSTORE_PATH_1: ${{ SIGNING_KEY_STORE_PATH }}
 
 
         run: |
           echo $ENCODED_STRING >> secrets.txt
           echo $APP_SIGN_KEYSTORE_PATH >> secrets.txt
+          echo $ENCODED_STRING_1 >> secrets.txt
+          echo $APP_SIGN_KEYSTORE_PATH_1 >> secrets.txt
           echo $ENCODED_STRING > keystore-b64.txt
           base64 -d keystore-b64.txt > APP_SIGN_KEYSTORE_PATH
 
