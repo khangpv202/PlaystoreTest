@@ -26,15 +26,6 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-environment
 
-      - name: Write key file
-        env:
-          AUTH: ${{ secrets.RELEASE_KEYSTORE }}
-        run: echo $AUTH | base64 --decode > /tmp/keystore
-
-      - name: Write key file
-        env:
-          GPLAY_SERVICE_ACCOUNT: ${{ secrets.GPLAY_SERVICE_ACCOUNT }}
-        run: echo $GPLAY_SERVICE_ACCOUNT | base64 --decode > /tmp/gplayserviceaccount.json
 
       - name: Build and publish DEV app with Fastlane
         uses: ./.github/actions/fastlane
@@ -47,8 +38,6 @@ jobs:
           sonar_token:             ${{ secrets.SONAR_TOKEN }}
 
           github_run_id: ${{ env.GITHUB_RUN_ID }}
-          baas_bb_artifactory_android_username: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_USERNAME }}
-          baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
           app_version_code: ${{ github.run_number }}
 
 
