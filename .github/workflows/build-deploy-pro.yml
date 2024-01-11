@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SIGN_KEYSTORE_PATH: /tmp/keystore
+  APP_SIGN_KEYSTORE_PATH: /tmp_1/keystore
   CACHE_BUNDLER: ~/.bundler
 
 jobs:
