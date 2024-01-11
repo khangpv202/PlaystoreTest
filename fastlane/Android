@@ -58,10 +58,10 @@ def read_gradle_properties(env)
     end
 
     _gradleProperties = {
-        "android.injected.signing.key.alias" => ENV["APP_SIGN_KEY_ALIAS"],
-        "android.injected.signing.key.password" => ENV["APP_SIGN_KEY_PASSWORD"],
+        "android.injected.signing.key.alias" => "123456",
+        "android.injected.signing.key.password" => "123456",
         "android.injected.signing.store.file" => ENV["APP_SIGN_KEYSTORE_PATH"],
-        "android.injected.signing.store.password" => ENV["APP_SIGN_STORE_PASSWORD"],
+        "android.injected.signing.store.password" => "123456",
 
         "applicationId" => @configuration['app_identifier'],
         "versionName" =>  ENV["APP_VERSION_NAME"] != nil ? ENV["APP_VERSION_NAME"] : @configuration['version_name'],
