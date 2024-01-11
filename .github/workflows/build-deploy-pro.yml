@@ -22,6 +22,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Decode Keystore
+        env:
+            ENCODED_STRING: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
+            SIGNING_KEY_STORE_PATH: ${{ secrets.SIGNING_KEY_STORE_PATH }}
+
+        run: |
+            echo $ENCODED_STRING > keystore-b64.txt
+            base64 -d keystore-b64.txt > $SIGNING_KEY_STORE_PATH
       - name: Setup environment
         uses: ./.github/actions/setup-environment
 
@@ -34,7 +42,7 @@ jobs:
           APP_SIGN_KEY_ALIAS: ${{ secrets.RELEASE_APP_SIGN_KEY_ALIAS }}
           APP_SIGN_KEY_PASSWORD: ${{ secrets.RELEASE_APP_SIGN_KEY_PASSWORD }}
           APP_SIGN_STORE_PASSWORD: ${{ secrets.RELEASE_APP_SIGN_STORE_PASSWORD }}
-          APP_SIGN_KEYSTORE_PATH: ${{ secrets.RELEASE_APP_SIGN_STORE_PATH }}
+          APP_SIGN_KEYSTORE_PATH: ${{ secrets.SIGNING_KEY_STORE_PATH }}
           sonar_token:             ${{ secrets.SONAR_TOKEN }}
 
           github_run_id: ${{ env.GITHUB_RUN_ID }}
