@@ -22,17 +22,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Decode Keystore
-        env:
-            ENCODED_STRING: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
-            SIGNING_KEY_STORE_PATH: ${{ secrets.SIGNING_KEY_STORE_PATH }}
 
-        run: |
-            echo $ENCODED_STRING > keystore-b64.txt
-            base64 -d keystore-b64.txt > $SIGNING_KEY_STORE_PATH
       - name: Setup environment
         uses: ./.github/actions/setup-environment
 
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
+          SIGNING_KEY_STORE_PATH: ${{ secrets.SIGNING_KEY_STORE_PATH }}
+
+        run: |
+          echo $ENCODED_STRING > keystore-b64.txt
+          base64 -d keystore-b64.txt > $SIGNING_KEY_STORE_PATH
 
       - name: Build and publish DEV app with Fastlane
         uses: ./.github/actions/fastlane
