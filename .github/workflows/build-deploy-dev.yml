@@ -1,0 +1,77 @@
+name: "Deploy dev build"
+
+#
+#   IMPORTANT TO KNOW
+# - This workflow runs every time there are changes to `develop` branch.
+#
+on:
+  push:
+    branches: [ develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_SIGN_KEYSTORE_PATH: /tmp/keystore
+  CACHE_BUNDLER: ~/.bundler
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          secret_keystore: ${{ secrets.KEYSTORE }}
+
+      - name: Build and publish TST app with Fastlane
+        uses: ./.github/actions/fastlane
+        with:
+          lane_name: "tst_deployment"
+          conf_env: "tst"
+          appcenter_api_token: ${{ secrets.APPCENTER_API_TOKEN }}
+          appcenter_owner_name: ${{ secrets.APPCENTER_OWNER_NAME }}
+          app_sign_key_alias: ${{ secrets.APP_SIGN_KEY_ALIAS }}
+          app_sign_key_password: ${{ secrets.APP_SIGN_KEY_PASSWORD }}
+          app_sign_store_password: ${{ secrets.APP_SIGN_STORE_PASSWORD }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+          github_run_id: ${{ env.GITHUB_RUN_ID }}
+          baas_bb_artifactory_android_username: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_USERNAME }}
+          baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
+          app_version_code: ${{ github.run_number }}
+
+
+      - name: Build and publish DEV app with Fastlane
+        uses: ./.github/actions/fastlane
+        with:
+          lane_name: "dev_deployment"
+          conf_env: "develop"
+          appcenter_api_token: ${{ secrets.APPCENTER_API_TOKEN }}
+          appcenter_owner_name: ${{ secrets.APPCENTER_OWNER_NAME }}
+          app_sign_key_alias: ${{ secrets.APP_SIGN_KEY_ALIAS }}
+          app_sign_key_password: ${{ secrets.APP_SIGN_KEY_PASSWORD }}
+          app_sign_store_password: ${{ secrets.APP_SIGN_STORE_PASSWORD }}
+          sonar_token:             ${{ secrets.SONAR_TOKEN }}
+          github_run_id: ${{ env.GITHUB_RUN_ID }}
+          baas_bb_artifactory_android_username: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_USERNAME }}
+          baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
+          app_version_code: ${{ github.run_number }}
+
+      - name: Run security step for dev
+        uses: backbase-common/workflows/.github/actions/security/generic@main
+        with:
+          name: ${{ github.event.repository.name }}
+          deliverable: true
+          type: android
+          version: dev
+          gradle-configuration: releaseRuntimeClasspath
+        env:
+          SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
+          SECURITY_TOOL_REQUIRES_MTLS: 1
+          SECURITY_TOOL_MTLS_CERT: ${{ secrets.SECURITY_TOOL_MTLS_CERT }}
+          SECURITY_TOOL_MTLS_KEY: ${{ secrets.SECURITY_TOOL_MTLS_KEY }}
+          SECURITY_TOOL_MTLS_PWD: ${{ secrets.SECURITY_TOOL_MTLS_PWD }}

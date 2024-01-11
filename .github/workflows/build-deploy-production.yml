@@ -1,0 +1,82 @@
+name: "Deploy production build"
+
+#
+#   IMPORTANT TO KNOW
+#
+# - Unlike others, this workflow runs every time there is a closed PR to master branch
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - closed
+
+env:
+  APP_SIGN_KEYSTORE_PATH: /tmp/keystore
+  CACHE_BUNDLER: ~/.bundler
+
+jobs:
+  build:
+    if: |
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.head.ref, 'release/') ||
+      startsWith(github.event.pull_request.head.ref, 'hotfix/'))
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        api: [ 30 ]
+        test_suite: [ Regression ]
+        emulator: [ pixel_xl ]
+        env: [ prod ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          secret_keystore: ${{ secrets.KEYSTORE }}
+
+      - name: Setup tools for Encryption
+        uses: ./.github/actions/setup-encryption
+
+      - name: Build and publish app with Fastlane
+        uses: ./.github/actions/build-and-publish
+        with:
+          lane_name: "release_deployment"
+          conf_env: "prod"
+          secret_keystore: ${{ secrets.KEYSTORE }}
+          runner_os: ${{ runner.os }}
+          appcenter_api_token: ${{ secrets.APPCENTER_API_TOKEN }}
+          appcenter_owner_name: ${{ secrets.APPCENTER_OWNER_NAME }}
+          app_sign_key_alias: ${{ secrets.APP_SIGN_KEY_ALIAS }}
+          app_sign_key_password: ${{ secrets.APP_SIGN_KEY_PASSWORD }}
+          app_sign_store_password: ${{ secrets.APP_SIGN_STORE_PASSWORD }}
+          github_run_id: ${{ env.GITHUB_RUN_ID }}
+          baas_bb_artifactory_android_username: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_USERNAME }}
+          baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
+          app_version_code: ${{ github.run_number }}
+          cache_bundler: ${{ env.cache_bundler }}
+
+      - name: Run security step for dev
+        uses: backbase-common/workflows/.github/actions/security/generic@main
+        with:
+          name: ${{ github.event.repository.name }}
+          deliverable: true
+          type: android
+          version: dev
+          gradle-configuration: releaseRuntimeClasspath
+        env:
+          SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
+          SECURITY_TOOL_REQUIRES_MTLS: 1
+          SECURITY_TOOL_MTLS_CERT: ${{ secrets.SECURITY_TOOL_MTLS_CERT }}
+          SECURITY_TOOL_MTLS_KEY: ${{ secrets.SECURITY_TOOL_MTLS_KEY }}
+          SECURITY_TOOL_MTLS_PWD: ${{ secrets.SECURITY_TOOL_MTLS_PWD }}
+
+  finish-release-hotfix:
+    needs: build
+    uses: ./.github/workflows/finish-release-hotfix.yml

@@ -1,0 +1,84 @@
+import("ADB")
+
+# Lanes that execute gradle tasks, including reading gradle properties
+
+@configuration = nil
+@gradleProperties = nil
+
+private_lane :build do
+    executeGradle(@configuration['task_build'])
+end
+
+private_lane :encrypt do
+    executeGradle('encryptConfigurationFileProd')
+end
+
+private_lane :unit_test do
+    executeGradle(@configuration['task_unittest'])
+end
+
+def executeGradle(task)
+    puts "Task -> " + task
+    gradle(
+        task: task,
+        properties: @gradleProperties,
+        flags: "-S"
+    )
+end
+
+def readAndroidParams(options)
+    @configuration = YAML.load_file('props.yaml')
+    if(@configuration == nil)
+        UI.user_error!("File ./props.yaml not found")
+    end
+    if options[:conf] != nil
+        read_gradle_properties(options[:conf])
+    else
+        UI.user_error!("readAndroidParams lane - Missing conf param")
+    end
+
+end
+
+
+def read_gradle_properties(env)
+    _mavenGradleCredentialsProperties = {
+        "artifactsRepoUrl" => @configuration['artifactsRepoUrl'],
+        "artifactsRetailRepoUrl" => @configuration['artifactsRetailRepoUrl'],
+        "artifactsIdentityRepoUrl" => @configuration['artifactsIdentityRepoUrl'],
+        "artifactsDesignRepoUrl" => @configuration['artifactsDesignRepoUrl'],
+        "artifactsBusinessRepoUrl" => @configuration['artifactsBusinessRepoUrl'],
+        "artifactsEngagementChannelsRepoUrl" => @configuration['artifactsEngagementChannelsRepoUrl'],
+        "artifactsMobileNotificationsRepoUrl" => @configuration['artifactsMobileNotificationsRepoUrl']
+    }
+
+    puts "Reading gradle properties for env: #{env}"
+    @configuration = @configuration["configurations"]["#{env}"]
+    if(@configuration == nil)
+        UI.user_error!("Environment not found for value: #{env}")
+    end
+
+    _gradleProperties = {
+        "android.injected.signing.key.alias" => ENV["APP_SIGN_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["APP_SIGN_KEY_PASSWORD"],
+        "android.injected.signing.store.file" => ENV["APP_SIGN_KEYSTORE_PATH"],
+        "android.injected.signing.store.password" => ENV["APP_SIGN_STORE_PASSWORD"],
+
+        "applicationId" => @configuration['app_identifier'],
+        "versionName" =>  ENV["APP_VERSION_NAME"] != nil ? ENV["APP_VERSION_NAME"] : @configuration['version_name'],
+        "versionCode" => ENV["APP_VERSION_CODE"] != nil ? ENV["APP_VERSION_CODE"] : @configuration['version_code'],
+        "appLabel" => @configuration['app_name'],
+
+        "backbaseRepoUsername" => ENV['BAAS_BB_ARTIFACTORY_ANDROID_USERNAME'],
+        "backbaseRepoEncryptedPassword" => ENV['BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD'],
+        "sonarToken" => ENV['SONAR_TOKEN']
+    }
+
+    @gradleProperties = _gradleProperties.merge(_mavenGradleCredentialsProperties)
+end
+private_lane :sonar_analysis do
+    gradle(
+        tasks: [@configuration['task_jacoco'], 'sonarqube'],
+        properties: @gradleProperties,
+        flags: "-S"
+    )
+end

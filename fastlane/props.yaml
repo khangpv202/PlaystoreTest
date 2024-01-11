@@ -1,0 +1,56 @@
+artifactsRepoUrl: https://repo.backbase.com/android
+artifactsRetailRepoUrl: https://repo.backbase.com/android-retail
+artifactsIdentityRepoUrl: https://repo.backbase.com/android-identity
+artifactsDesignRepoUrl: https://repo.backbase.com/design-android
+artifactsBusinessRepoUrl: https://repo.backbase.com/android-business
+artifactsEngagementChannelsRepoUrl: https://repo.backbase.com/android-engagement-channels
+artifactsMobileNotificationsRepoUrl: https://repo.backbase.com/android-mobile-notifications
+configurations:
+  develop:
+    version_name: "2023.02-LTS"
+    version_code: 13
+    app_identifier: com.ewbp.businessbankingapp.dev
+    app_name: EWBP Business Dev
+    app_center_name: ewbp-us-business-android-dev
+    task_build: assembleDevelopRelease
+    task_unittest: testDevelopReleaseUnitTest
+    task_instrumentationTest: app:connectedDevelopDebugAndroidTest
+    task_uiTest: us-app-ui-tests:connectedDevelopDebugAndroidTest
+    task_jacoco: jacocoTestReportDevelopDebug
+    release_notes: CHANGELOG.md
+  tst:
+    version_name: "2023.02-LTS"
+    version_code: 15
+    app_identifier: com.ewbp.businessbankingapp.tst
+    app_name: EWBP Business tst
+    app_center_name: ewbp-business-android-tst
+    task_build: assembleTstRelease
+    task_unittest: testDevelopReleaseUnitTest
+    task_instrumentationTest: app:connectedDevelopDebugAndroidTest
+    task_uiTest: us-app-ui-tests:connectedDevelopDebugAndroidTest
+    task_jacoco: jacocoTestReportTstDebug
+    release_notes: CHANGELOG.md
+  stg:
+    version_name: "2023.02-LTS"
+    version_code: 16
+    app_identifier: com.ewbp.businessbankingapp.stg
+    app_name: EWBP Business stg
+    app_center_name: ewbp-business-android-stg
+    task_build: assembleStgRelease
+    task_unittest: testDevelopReleaseUnitTest
+    task_instrumentationTest: app:connectedDevelopDebugAndroidTest
+    task_uiTest: us-app-ui-tests:connectedDevelopDebugAndroidTest
+    task_jacoco: jacocoTestReportTstDebug
+    release_notes: CHANGELOG.md
+  prod:
+    version_name: "2022.08.1-LTS"
+    version_code: 2
+    app_identifier: com.eastwest.mobile.dxp.business
+    app_name: EWBP Business
+    app_center_name:
+    task_build: assembleProdRelease
+    task_unittest: testProdReleaseUnitTest
+    task_instrumentationTest: app:connectedProdDebugAndroidTest
+    task_uiTest: app:connectedProdDebugAndroidTest
+    task_jacoco: jacocoTestReportProdDebug
+    release_notes: CHANGELOG.md

@@ -1,0 +1,69 @@
+# Main lanes, contains CI/CD methods called by GitHub Workflows
+
+fastlane_version "2.121.0"
+default_platform :android
+
+import("Android")
+import("Deployment")
+
+before_all do |lane, options|
+    skip_docs
+	readAndroidParams(options)
+end
+lane :code_analysis do |options|
+    unit_test
+    sonar_analysis
+end
+lane :pr_on_develop do
+    unit_test
+    sonar_analysis
+    ui_tests(options)
+end
+
+lane :dev_deployment do
+    unit_test
+    build
+    deploy_appcenter
+end
+
+lane :security_deployment do
+    build
+    deploy_appcenter
+end
+
+lane :tst_deployment do
+    build
+    deploy_appcenter
+end
+
+lane :stg_deployment do
+    build
+    deploy_appcenter
+end
+
+lane :release_deployment do |options|
+    unit_test
+    build
+    encrypt
+    build
+    deploy_appcenter
+end
+
+lane :master do |options|
+    build
+    deploy_playstore
+    #slackit(env: options[:conf])
+end
+
+lane :ui_tests do |options|
+    matrix_test_suite = options[:matrix_test_suite] ? options[:matrix_test_suite] : 'Smoke'
+    matrix_env = options[:matrix_env] ? options[:matrix_env] : 'develop'
+    ENV["API"] = options[:matrix_api] ? options[:matrix_api] : '29'
+    ENV["EMULATOR"] = options[:matrix_emulator] ? options[:matrix_emulator] : 'pixel_xl'
+
+    start_emulator
+    wait_for_emulator_to_boot
+    task = @configuration['task_uiTest'] + ' -PtestSuite=' + matrix_test_suite + ' -Pmatrix_env=' + matrix_env
+    executeGradle(task)
+    close_emulators
+end

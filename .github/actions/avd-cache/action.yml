@@ -1,0 +1,22 @@
+name: AVD cache
+
+inputs:
+  matrix_api:
+    description: "Strategy Matrix API"
+    required: true
+  matrix_emulator:
+    description: "Strategy Matrix Emulator"
+    required: true
+
+description: AVD cache
+runs:
+  using: "composite"
+  steps:
+    - name: AVD cache
+      uses: actions/cache@v2
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: ${{ inputs.matrix_emulator }}_API_${{ inputs.matrix_api }}

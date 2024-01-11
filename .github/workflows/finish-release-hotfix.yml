@@ -1,0 +1,97 @@
+name: "Finish release/hotfix issue"
+
+#
+#   IMPORTANT TO KNOW
+#
+# - This workflow runs every time a PR to master is closed (merged or not).
+#
+
+on:
+  workflow_call:
+
+jobs:
+  close_issue:
+    name: Close release/hotfix issue
+    runs-on: ubuntu-latest
+    steps:
+      # Unfortunately, GitHub doesn't trigger events for actions that have been taken by a GitHub action.
+      # This means we cannot use `Fixes #issue_number.` in the body of the PR to close the release issue after the branch is merged.
+      # Hence, we close it here "manually"
+      - name: Close release issue
+        if: startsWith(github.event.pull_request.head.ref, 'release/')
+        run: |
+          RELEASE_ISSUE_URL=$(curl \
+            -X GET \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/${{ github.repository }}/issues\?labels=release\&state=open \
+            | jq -r '.[0].url'
+            )
+
+          curl \
+            -X PATCH \
+            -H 'Accept: application/vnd.github.v3+json' \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            $RELEASE_ISSUE_URL \
+            -d '{"state":"closed"}'
+
+      - name: Close hotfix issue
+        if: startsWith(github.event.pull_request.head.ref, 'hotfix/')
+        run: |
+          RELEASE_ISSUE_URL=$(curl \
+            -X GET \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/${{ github.repository }}/issues\?labels=hotfix\&state=open \
+            | jq -r '.[0].url'
+            )
+
+          curl \
+            -X PATCH \
+            -H 'Accept: application/vnd.github.v3+json' \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            $RELEASE_ISSUE_URL \
+            -d '{"state":"closed"}'
+  merge_back:
+    name: Publish github release
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true # only merged pull requests must trigger this job
+    steps:
+      - name: Extract version from branch name (for release branches)
+        if: startsWith(github.event.pull_request.head.ref, 'release/')
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          VERSION=${BRANCH_NAME#release/}
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Extract version from branch name (for hotfix branches)
+        if: startsWith(github.event.pull_request.head.ref, 'hotfix/')
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          VERSION=${BRANCH_NAME#hotfix/}
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: thomaseizinger/create-release@1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: ${{ env.RELEASE_VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Merge release into develop branch
+        uses: thomaseizinger/create-pull-request@1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          head: master
+          base: develop
+          title: Merge release ${{ env.RELEASE_VERSION }} into develop branch
+          body: |
+            This PR merges the master branch containing changes for Release (or Hotfix) ${{ env.RELEASE_VERSION }} back into develop.
+            This happens to ensure that the updates that happend on the release branch, i.e. CHANGELOG and manifest updates are also present on the develop branch.

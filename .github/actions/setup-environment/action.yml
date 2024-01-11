@@ -1,0 +1,32 @@
+name: "Setup environment with Java, Gradle & Cache"
+
+inputs:
+  secret_keystore:
+    description: "Keystore"
+    required: true
+
+description: Setup environment
+runs:
+  using: "composite"
+  steps:
+    - name: Write key file
+      env:
+        AUTH: ${{ inputs.secret_keystore }}
+      run: echo $AUTH | base64 --decode > /tmp/keystore
+      shell: bash
+
+    - name: Checkout the repository
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 11 and Cache Gradle
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+        cache: 'gradle'
+
+    - name: Setup Ruby and Cache Bundler
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7.2'
+        bundler-cache: true

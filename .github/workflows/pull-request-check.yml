@@ -1,0 +1,52 @@
+name: "Verify PR on develop branch"
+
+#
+#   IMPORTANT TO KNOW
+#
+# - This workflow runs on any branch that creates a pull request to `develop`.
+# - It runs in a few conditions:
+#     1. When a Pull Request is first opened;
+#     2. Whenever new changes are pushed to an existing Pull Request.
+#
+
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+    branches: [ develop1 ]
+
+concurrency:
+  group: ${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+  
+env:
+  APP_SIGN_KEYSTORE_PATH: /tmp/keystore
+  CACHE_BUNDLER: ~/.bundler
+
+jobs:
+  build:
+    name: "dev"
+    runs-on: macos-latest
+
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup tools
+        uses: ./.github/actions/setup-environment
+        with:
+          secret_keystore: ${{ secrets.KEYSTORE }}
+
+      - name: Build app and run unit tests
+        uses: ./.github/actions/fastlane
+        with:
+          lane_name: "pr_on_develop"
+          conf_env: "develop"
+          appcenter_api_token: ${{ secrets.APPCENTER_API_TOKEN }}
+          appcenter_owner_name: ${{ secrets.APPCENTER_OWNER_NAME }}
+          app_sign_key_alias: ${{ secrets.APP_SIGN_KEY_ALIAS }}
+          app_sign_key_password: ${{ secrets.APP_SIGN_KEY_PASSWORD }}
+          app_sign_store_password: ${{ secrets.APP_SIGN_STORE_PASSWORD }}
+          github_run_id: ${{ env.GITHUB_RUN_ID }}
+          baas_bb_artifactory_android_username: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_USERNAME }}
+          baas_bb_artifactory_android_password: ${{ secrets.BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD }}
+          app_version_code: ${{ github.run_number }}
+          cache_bundler: ${{ env.CACHE_BUNDLER }}

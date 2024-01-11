@@ -1,0 +1,122 @@
+name: Release and Hotfix Start
+
+on:
+  issues:
+    types: [ labeled ]
+
+jobs:
+  draft-new-release:
+    name: "Draft a new release"
+    runs-on: ubuntu-latest
+
+    # Only run for issues with release title and release as issue name.
+    if: startsWith(github.event.issue.title, 'Release version') && contains(github.event.issue.labels.*.name, 'release')
+    steps:
+      - name: Generate authentication token
+        id: generate-token
+        uses: navikt/github-app-token-generator@v1
+        with:
+          private-key: ${{ secrets.GIT_GITHUB_APP_PEM_FILE }}
+          app-id: ${{ secrets.GIT_GITHUB_APP_ID }}
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Extract version from issue title
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          VERSION=${TITLE#Release version }
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        uses: ./.github/actions/check-tag-exists
+        with:
+          issue_number: ${{ github.event.issue.number }}
+          issue_title: ${{ github.event.issue.title }}
+          tag: ${{ env.RELEASE_VERSION }}
+          github_token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Create release PR
+        uses: ./.github/actions/create-release-pr
+        with:
+          release_type: "release"
+          base_branch: "develop"
+          release_version: ${{ env.RELEASE_VERSION }}
+
+      - name: Create pull request
+        uses: thomaseizinger/create-pull-request@master
+        with:
+          head: release/${{ env.RELEASE_VERSION }}
+          base: master
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          title: ${{ github.event.issue.title }}
+          # By default, we request a review from the person who opened the issue. You can replace this with a static list of users.
+          reviewers: ${{ github.event.issue.user.login }}
+          # Write a nice message to the user.
+          # We are claiming things here based on the `publish-new-release.yml` workflow.
+          # You should obviously adopt it to say the truth depending on your release workflow :)
+          body: |
+            Hi @${{ github.event.issue.user.login }}!
+            This PR was created in response to this release issue: #${{ github.event.issue.number }}.
+            I've updated the changelog and bumped the versions in the correct configuration files in this commit: ${{ steps.make-commit.outputs.commit }}.
+            With the creation of branch release/${{ env.RELEASE_VERSION }}, a UAT/STG version of the app MIGHT have been deployed to AppCenter - if configured.
+            Merging this PR into master will create a GitHub release and upload a production app to Google Play Store.
+
+  draft-new-hotfix:
+    name: "Draft a new hotfix"
+    runs-on: ubuntu-latest
+
+    # Only run for issues with hotfix title and hotfix as issue name.
+    if: startsWith(github.event.issue.title, 'Release hotfix version') && contains(github.event.issue.labels.*.name, 'hotfix')
+    steps:
+      - name: Generate authentication token
+        id: generate-token
+        uses: navikt/github-app-token-generator@v1
+        with:
+          private-key: ${{ secrets.GIT_GITHUB_APP_PEM_FILE }}
+          app-id: ${{ secrets.GIT_GITHUB_APP_ID }}
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Extract version from issue title
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          VERSION=${TITLE#Release hotfix version }
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        uses: ./.github/actions/check-tag-exists
+        with:
+          issue_number: ${{ github.event.issue.number }}
+          issue_title: ${{ github.event.issue.title }}
+          tag: ${{ env.RELEASE_VERSION }}
+          github_token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Create hotfix PR
+        uses: ./.github/actions/create-release-pr
+        with:
+          release_type: "hotfix"
+          base_branch: "master"
+          release_version: ${{ env.RELEASE_VERSION }}
+
+      - name: Create pull request
+        uses: thomaseizinger/create-pull-request@master
+        with:
+          head: hotfix/${{ env.RELEASE_VERSION }}
+          base: master
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          title: ${{ github.event.issue.title }}
+          # By default, we request a review from the person who opened the issue. You can replace this with a static list of users.
+          reviewers: ${{ github.event.issue.user.login }}
+          # Write a nice message to the user.
+          # We are claiming things here based on the `publish-new-release.yml` workflow.
+          # You should obviously adopt it to say the truth depending on your release workflow :)
+          body: |
+            Hi @${{ github.event.issue.user.login }}!
+            This PR was created in response to this hotfix issue: #${{ github.event.issue.number }}.
+            I've updated the changelog and bumped the versions in the correct configuration files in this commit: ${{ steps.make-commit.outputs.commit }}.
+            Apply your fixes to this branch (hotfix/${{ env.RELEASE_VERSION }}) and merge when appropriate.
+            Merging this PR into master will create a GitHub release and upload a production app to Google Play Store.

@@ -1,0 +1,61 @@
+name: "Build and publish app with Fastlane"
+
+inputs:
+  lane_name:
+    description: "Pipeline for deployment"
+    required: true
+  conf_env:
+    description: "Configuration environment"
+    required: true
+  appcenter_api_token:
+    description: "APPCENTER API TOKEN"
+    required: true
+  appcenter_owner_name:
+    description: "APPCENTER Owner name"
+    required: true
+  app_sign_key_alias:
+    description: "Signing key Alias"
+    required: true
+  app_sign_key_password:
+    description: "Signing key password"
+    required: true
+  app_sign_store_password:
+    description: "keystore signing password"
+    required: true
+  github_run_id:
+    description: "Github run ID"
+    required: true
+  baas_bb_artifactory_android_username:
+    description: "BB Android Username"
+    required: true
+  baas_bb_artifactory_android_password:
+    description: "BB Android Password"
+    required: true
+  app_version_code:
+    description: "Version Code"
+    required: true
+  cache_bundler:
+    description: "Bundle cache"
+    required: true
+
+description: Build and Run
+runs:
+  using: "composite"
+  steps:
+    - name: Run fastlane, ${{inputs.lane_name}} lane, ${{inputs.conf_env}} configuration
+      uses: maierj/fastlane-action@v2.3.0
+      env:
+        APPCENTER_API_TOKEN: ${{ inputs.appcenter_api_token }}
+        APPCENTER_OWNER_NAME: ${{ inputs.appcenter_owner_name }}
+        APP_SIGN_KEY_ALIAS: ${{ inputs.app_sign_key_alias }}
+        APP_SIGN_KEY_PASSWORD: ${{ inputs.app_sign_key_password }}
+        APP_SIGN_STORE_PASSWORD: ${{ inputs.app_sign_store_password }}
+        GITHUB_RUN_ID: ${{ inputs.github_run_id }}
+        BAAS_BB_ARTIFACTORY_ANDROID_USERNAME: ${{ inputs.baas_bb_artifactory_android_username }}
+        BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD: ${{ inputs.baas_bb_artifactory_android_password }}
+        APP_VERSION_CODE: ${{ inputs.app_version_code }}
+      with:
+        lane: ${{ inputs.lane_name }}
+        options: '{ "conf": "${{inputs.conf_env}}" }'
+        skip-tracking: false
+        bundle-install-path: ${{ inputs.cache_bundler }}

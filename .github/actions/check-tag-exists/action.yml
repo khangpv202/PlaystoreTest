@@ -1,0 +1,39 @@
+name: "Check if tag exists"
+
+inputs:
+  issue_number:
+    required: true
+  issue_title:
+    required: true
+  tag:
+    description: "Release or hotfix version"
+    required: true
+  github_token:
+    description: "Github token"
+    required: true
+
+description: Check if tag exists
+runs:
+  using: "composite"
+  steps:
+
+    - uses: mukunku/tag-exists-action@v1.0.0
+      id: checkTag
+      with:
+        tag: ${{ inputs.tag }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    - name: Close issue
+      if: steps.checkTag.outputs.exists == 'true'
+      uses: ./.github/actions/close-issue
+      with:
+        number: ${{ inputs.issue_number }}
+        title: ${{ inputs.issue_title }}
+        comments: '**${{ inputs.tag }}** release exists!\r\nCheck latest release and bump to next version.'
+
+    - if: steps.checkTag.outputs.exists == 'true'
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed('${{ inputs.tag }} tag exists!')

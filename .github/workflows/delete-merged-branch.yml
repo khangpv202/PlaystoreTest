@@ -1,0 +1,58 @@
+name: "Delete merged branch"
+
+#
+#   IMPORTANT TO KNOW
+#
+# - This workflow runs every time a PR to develop is merged.
+#
+# - Removes merged head branch
+#
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref != 'master' &&
+      github.event.pull_request.head.ref != 'develop'
+    outputs:
+      delete_head_ref: ${{ steps.is_on_pr.outputs.value == 'false' }}
+    steps:
+      - uses: octokit/graphql-action@v2.x
+        id: pull_requests_open
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          query: |
+            query pullRequests($owner:String!,$repo:String!,$pr_ref:String!) {
+              repository(owner:$owner,name:$repo) {
+                pullRequests(states: OPEN, last: 2, headRefName: $pr_ref) {
+                  nodes {
+                    id
+                  }
+                }
+              }
+            }
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          pr_ref: ${{ github.event.pull_request.head.ref }}
+
+      - id: is_on_pr
+        if: steps.pull_requests_open.outputs.data != null
+        run: echo "::set-output name=value::${{ fromJSON(steps.pull_requests_open.outputs.data).repository.pullRequests.nodes[0] != null }}"
+
+  delete_merged_branch:
+    needs: check
+    name: Delete head branch after merge
+    runs-on: ubuntu-latest
+    if: needs.check.outputs.delete_head_ref == 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Delete merged branches
+        run: git push origin --delete ${{github.event.pull_request.head.ref}}
+        shell: bash

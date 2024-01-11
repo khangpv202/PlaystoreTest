@@ -1,0 +1,15 @@
+desc "Run Instrumentation Tests"
+private_lane :instrumentation_test do |options|
+    matrix_emulator = options[:matrix_emulator] ? options[:matrix_emulator] : 'pixel_xl'
+    matrix_api = options[:matrix_api] ? options[:matrix_api] : '29'
+    matrix_test_suite = options[:matrix_test_suite] ? options[:matrix_test_suite] : 'Smoke'
+    matrix_env = options[:matrix_env] ? options[:matrix_env] : 'dev'
+
+    ENV["API"] = options[:matrix_api] ? options[:matrix_api] : '29'
+    ENV["EMULATOR"] = options[:matrix_emulator] ? options[:matrix_emulator] : 'pixel_xl'
+
+    start_emulator
+    task = @configuration['task_instrumentationTest'] + ' -PtestSuite=' + matrix_test_suite + ' -Pmatrix_env=' + matrix_env
+    executeGradle(task)
+    close_emulators
+end

@@ -1,0 +1,61 @@
+name: "Run UI Tests"
+
+inputs:
+  app_sign_key_alias:
+    description: "Signing key Alias"
+    required: true
+  app_sign_key_password:
+    description: "Signing key password"
+    required: true
+  app_sign_store_password:
+    description: "keystore signing password"
+    required: true
+  github_run_id:
+    description: "Github run ID"
+    required: true
+  baas_bb_artifactory_android_username:
+    description: "BB Artifactory Android Username"
+    required: true
+  baas_bb_artifactory_android_password:
+    description: "BB Artifactory Android Password"
+    required: true
+  cache_bundler:
+    description: "Cache bundler"
+    required: true
+  matrix_api:
+    description: "Strategy Matrix API"
+    required: true
+  matrix_emulator:
+    description: "Strategy Matrix Emulator"
+    required: true
+  matrix_test_suite:
+    description: "Strategy Matrix Test Suite"
+    required: true
+  matrix_env:
+    description: "Strategy Matrix Env variable"
+    required: true
+
+description: Run UI Tests and upload jUnit report
+runs:
+  using: "composite"
+  steps:
+    - name: ui_tests
+      uses: maierj/fastlane-action@v2.0.1
+      env:
+        APP_SIGN_KEY_ALIAS: ${{ inputs.app_sign_key_alias }}
+        APP_SIGN_KEY_PASSWORD: ${{ inputs.app_sign_key_password }}
+        APP_SIGN_STORE_PASSWORD: ${{ inputs.app_sign_store_password }}
+        GITHUB_RUN_ID: ${{ inputs.github_run_id }}
+        BAAS_BB_ARTIFACTORY_ANDROID_USERNAME: ${{ inputs.baas_bb_artifactory_android_username }}
+        BAAS_BB_ARTIFACTORY_ANDROID_PASSWORD: ${{ inputs.baas_bb_artifactory_android_password }}
+      with:
+        lane: ui_tests
+        options: '{ "conf": "${{ inputs.matrix_env }}", "matrix_emulator": "${{ inputs.matrix_emulator }}", "matrix_api": "${{ inputs.matrix_api }}", "matrix_test_suite": "${{ inputs.matrix_test_suite }}"}'
+        bundle-install-path: ${{ inputs.cache_bundler }}
+
+    - name: Upload jUnit report
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: ui_tests_results_${{ inputs.matrix_emulator }}_API${{ inputs.matrix_api }}_testSuite-${{ inputs.matrix_test_suite }}
+        path: us-app-ui-tests/build/reports/androidTests/connected/flavors/${{ inputs.matrix_env }}

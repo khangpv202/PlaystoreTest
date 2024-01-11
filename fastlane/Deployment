@@ -1,0 +1,29 @@
+# Contains deployment tasks for the Google Play Store and AppCenter
+
+def deploy_playstore
+    upload_to_play_store(
+        track: 'beta',
+        skip_upload_metadata: true,
+        skip_upload_images: true,
+        skip_upload_screenshots: true,
+        aab: SharedValues::GRADLE_AAB_OUTPUT_PATH,
+        skip_upload_apk: true
+    )
+end
+
+def deploy_appcenter(path = (lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]).to_s ,notify_testers = true)
+    version ='['+ @configuration['version_name'] + ']'
+    changelog = read_changelog(
+                         changelog_path: './'+ @configuration['release_notes']  ,
+                        section_identifier:version ,
+                        )
+    appcenter_upload(
+        apk: path,
+        api_token: ENV["APPCENTER_API_TOKEN"],
+        owner_name: ENV["APPCENTER_OWNER_NAME"],
+        app_name: @configuration['app_center_name'],
+        destinations: "*",
+        release_notes: changelog,
+        notify_testers: notify_testers
+      )
+end
