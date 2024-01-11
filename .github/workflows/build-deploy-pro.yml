@@ -13,7 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SIGN_KEYSTORE_PATH: /tmp_1/keystore
   CACHE_BUNDLER: ~/.bundler
 
 jobs:
@@ -35,6 +34,7 @@ jobs:
           APP_SIGN_KEY_ALIAS: ${{ secrets.RELEASE_APP_SIGN_KEY_ALIAS }}
           APP_SIGN_KEY_PASSWORD: ${{ secrets.RELEASE_APP_SIGN_KEY_PASSWORD }}
           APP_SIGN_STORE_PASSWORD: ${{ secrets.RELEASE_APP_SIGN_STORE_PASSWORD }}
+          APP_SIGN_KEYSTORE_PATH: ${{ secrets.RELEASE_APP_SIGN_STORE_PATH }}
           sonar_token:             ${{ secrets.SONAR_TOKEN }}
 
           github_run_id: ${{ env.GITHUB_RUN_ID }}
